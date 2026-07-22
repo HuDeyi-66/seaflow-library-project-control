@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>SeaFlow Library · 项目介绍与控制</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --ink: #17243b;
+      --muted: #667085;
+      --line: #d9deea;
+      --paper: #f7f8fb;
+      --panel: #ffffff;
+      --navy: #173b66;
+      --navy-hover: #0f3158;
+      --navy-active: #0a2544;
+      --navy-soft: #e7eef7;
+      --green: #237a57;
+      --green-soft: #dcefe7;
+      --yellow: #9b6a08;
+      --yellow-soft: #fff0c2;
+      --gray: #687386;
+      --gray-soft: #e9edf3;
+      --blue: #2764a5;
+      --blue-soft: #dceaf8;
+      --red: #a13d49;
+      --red-soft: #f7e1e4;
+      --shadow: 0 1.2rem 3rem rgba(23, 36, 59, 0.09);
+      --cell-min: 4.8rem;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); }
+    button { font: inherit; }
+    button:focus-visible { outline: 0.2rem solid #1f77d0; outline-offset: 0.18rem; }
+    .visually-hidden { position: absolute; inline-size: 1px; block-size: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50rem); white-space: nowrap; border: 0; }
+    .page-shell { --columns: var(--day-columns); max-inline-size: 96rem; margin-inline: auto; padding: 1.4rem; }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 1.4rem;
+      padding: clamp(1.4rem, 4vw, 3rem);
+      color: #f7fbff;
+      background: linear-gradient(135deg, #102a49, #1b4f7e, #2f6b83);
+      box-shadow: var(--shadow);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inline-size: 18rem;
+      block-size: 18rem;
+      border: 2.5rem solid rgba(255, 255, 255, 0.08);
+      border-radius: 50rem;
+      inset-inline-end: -5rem;
+      inset-block-start: -7rem;
+    }
+    .eyebrow { margin: 0 0 0.75rem; letter-spacing: 0.14em; font-size: 0.78rem; text-transform: uppercase; }
+    h1 { margin: 0; max-inline-size: 44rem; font-size: clamp(1.15rem, 3.1vw, 2.2rem); line-height: 1.15; letter-spacing: -0.025em; white-space: normal; }
+    .hero-copy { max-inline-size: 44rem; margin: 0.7rem 0 0; color: #d8e7f5; line-height: 1.7; }
+    .hero-tagline { margin: 0.45rem 0 0; color: #d8e7f5; font-size: clamp(0.76rem, 1.4vw, 1rem); line-height: 1.2; white-space: nowrap; }
+    .snapshot-chip { display: none; }
+    .fallback-notice { margin-block-start: 1rem; border: 0.12rem solid #d89a16; border-radius: 0.9rem; padding: 0.9rem 1rem; color: #5f3e00; background: #fff4cf; font-weight: 750; }
+    .fallback-notice[hidden] { display: none; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.8rem; margin-block-start: 1rem; }
+    .summary-card { min-block-size: 7.3rem; border: 0.08rem solid var(--line); border-radius: 1rem; padding: 1rem 1.1rem; background: var(--panel); box-shadow: 0 0.6rem 1.5rem rgba(23, 36, 59, 0.05); }
+    .summary-card span { display: block; color: var(--muted); font-size: 0.78rem; letter-spacing: 0.04em; }
+    .summary-card strong { display: block; margin-block-start: 0.55rem; font-size: 1.45rem; }
+    .summary-card small { display: block; margin-block-start: 0.3rem; color: var(--muted); }
+    .panel { margin-block-start: 1rem; border: 0.08rem solid var(--line); border-radius: 1.15rem; background: var(--panel); box-shadow: 0 0.8rem 2.2rem rgba(23, 36, 59, 0.05); }
+    .panel-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; padding: 1.15rem 1.25rem; border-block-end: 0.08rem solid var(--line); }
+    .panel-heading h2, .panel-heading h3 { margin: 0; }
+    .panel-heading p { margin: 0.35rem 0 0; color: var(--muted); }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+    .control-group { display: inline-flex; gap: 0.25rem; padding: 0.22rem; border-radius: 0.75rem; background: #edf1f6; }
+    .toolbar button, .detail-toggle { border: 0; border-radius: 0.58rem; padding: 0.55rem 0.75rem; color: var(--ink); background: transparent; cursor: pointer; }
+    .toolbar button[aria-pressed="true"], .detail-toggle[aria-expanded="true"] { color: #ffffff; background: var(--navy); }
+    .gantt-scroll { overflow-x: auto; overscroll-behavior-inline: contain; }
+    .gantt-canvas { min-inline-size: 74rem; }
+    [data-view="weekly"] .gantt-canvas { min-inline-size: 50rem; }
+    .gantt-header, .gantt-row { display: grid; grid-template-columns: minmax(18rem, 22rem) minmax(50rem, 1fr); }
+    [data-view="weekly"] .gantt-header, [data-view="weekly"] .gantt-row { grid-template-columns: minmax(18rem, 22rem) minmax(26rem, 1fr); }
+    .gantt-header { position: sticky; inset-block-start: 0; z-index: 4; background: var(--panel); border-block-end: 0.08rem solid var(--line); }
+    .record-heading { padding: 0.8rem 1rem; color: var(--muted); font-size: 0.78rem; font-weight: 750; text-transform: uppercase; letter-spacing: 0.08em; }
+    .axis-grid, .timeline-grid { display: grid; grid-template-columns: repeat(var(--columns), minmax(var(--cell-min), 1fr)); }
+    .axis-cell { min-block-size: 4rem; padding: 0.7rem 0.45rem; border-inline-start: 0.08rem solid var(--line); text-align: center; }
+    .axis-cell strong, .axis-cell small { display: block; }
+    .axis-cell small { margin-block-start: 0.25rem; color: var(--muted); font-size: 0.68rem; }
+    .axis-cell[data-state="in_progress"] { background: var(--yellow-soft); }
+    .axis-cell[data-state="rest"] { background: var(--blue-soft); }
+    .week-axis-cell, .week-timeline-cell { display: none; }
+    [data-view="weekly"] { --columns: var(--week-columns); --cell-min: 12rem; }
+    [data-view="weekly"] .day-axis-cell, [data-view="weekly"] .day-timeline-cell { display: none; }
+    [data-view="weekly"] .week-axis-cell, [data-view="weekly"] .week-timeline-cell { display: block; }
+    .gantt-groups-list, .gantt-substage-list { margin: 0; padding: 0; list-style: none; }
+    .gantt-substage-list[hidden] { display: none; }
+    .major-expand { display: inline-grid; place-items: center; inline-size: 2.2rem; block-size: 2.2rem; border: 0.08rem solid #a9bdd4; border-radius: 0.65rem; color: var(--navy); background: var(--navy-soft); cursor: pointer; }
+    .major-expand-icon { transition: transform 140ms ease; }
+    .major-expand[aria-expanded="true"] .major-expand-icon { transform: rotate(180deg); }
+    .gantt-group + .gantt-group { border-block-start: 0.08rem solid var(--line); }
+    .gantt-row { min-block-size: 5rem; }
+    .gantt-row-major { min-block-size: 5.8rem; border-block: 0.08rem solid #c7d5e5; background: #eef4fa; }
+    .gantt-row-substage { min-block-size: 3.9rem; background: #fbfcfe; }
+    .record-cell { position: sticky; inset-inline-start: 0; z-index: 3; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.45rem; padding: 0.55rem 0.7rem; border-inline-end: 0.08rem solid var(--line); background: inherit; }
+    .record-trigger { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 0.18rem 0.55rem; inline-size: min(18.2rem, calc(100vw - 4.8rem)); border: 0; border-radius: 0.75rem; padding: 0.55rem; text-align: start; color: var(--ink); background: transparent; cursor: default; }
+    .record-detail-trigger { cursor: pointer; }
+    .record-detail-trigger.record-trigger:hover { background: #edf3fa; }
+    .record-trigger-substage:hover { background: #f4f7fb; }
+    .record-trigger-major { min-block-size: 4.5rem; align-content: center; border-inline-start: 0.28rem solid var(--navy); background: #f7fbff; }
+    .record-trigger-major .status-badge { padding: 0.32rem 0.54rem; border: 0.08rem solid currentColor; font-size: 0.78rem; font-weight: 860; }
+    .record-trigger-major .record-id { font-size: 1.08rem; font-weight: 860; }
+    .record-trigger-major .record-title { font-size: 0.82rem; font-weight: 680; }
+    .record-trigger-substage { min-block-size: 3rem; padding-inline-start: 2rem; }
+    .record-trigger-substage::before { content: ""; position: absolute; inset-inline-start: 0.72rem; inset-block: -0.65rem; border-inline-start: 0.12rem solid #9fb3ca; }
+    .record-trigger-substage::after { content: ""; position: absolute; inset-inline-start: 0.72rem; inset-block-start: 1.35rem; inline-size: 0.85rem; border-block-start: 0.12rem solid #9fb3ca; }
+    .record-trigger-substage .status-badge { padding: 0.16rem 0.34rem; font-size: 0.62rem; font-weight: 700; }
+    .record-trigger-substage .record-id { font-size: 0.82rem; font-weight: 760; }
+    .record-trigger-substage .record-title { font-size: 0.72rem; }
+    .status-badge { align-self: start; grid-row: 1 / span 2; border-radius: 50rem; padding: 0.22rem 0.42rem; font-size: 0.68rem; font-weight: 750; white-space: nowrap; }
+    .status-badge[data-status="completed"] { color: var(--green); background: var(--green-soft); }
+    .status-badge[data-status="in_progress"] { color: var(--yellow); background: var(--yellow-soft); }
+    .status-badge[data-status="not_started"] { color: var(--gray); background: var(--gray-soft); }
+    .status-badge[data-status="terminated_incomplete"] { color: var(--red); background: var(--red-soft); }
+    .record-id { font-weight: 820; letter-spacing: -0.01em; }
+    .record-title { color: var(--muted); font-size: 0.78rem; line-height: 1.35; }
+    .record-dates { grid-column: 2; color: var(--muted); font-size: 0.68rem; }
+    .timeline-grid { position: relative; align-items: stretch; }
+    .timeline-cell { grid-row: 1; min-block-size: 5.8rem; border-inline-start: 0.08rem solid var(--line); background: #ffffff; }
+    .gantt-row-substage .timeline-cell { min-block-size: 3.9rem; background: #fbfcfe; }
+    .timeline-cell[data-state="in_progress"] { background: #fffaf0; }
+    .timeline-cell[data-state="rest"] { background: #f1f7fd; }
+    .timeline-bar { align-self: center; grid-row: 1; grid-column: var(--bar-start) / span var(--bar-span); z-index: 2; min-inline-size: 0; min-block-size: 2.7rem; margin: 0.42rem; border-radius: 0.65rem; padding: 0.45rem 0.6rem; overflow: hidden; white-space: nowrap; text-align: start; cursor: default; font-size: 0.72rem; font-weight: 750; box-shadow: 0 0.2rem 0.6rem rgba(23, 36, 59, 0.1); }
+    .record-detail-trigger.timeline-bar { cursor: pointer; }
+    .gantt-row-substage .timeline-bar { min-block-size: 1.7rem; margin-block: 0.35rem; padding-block: 0.24rem; font-size: 0.66rem; }
+    .timeline-bar-label { display: block; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .timeline-bar-completed { color: #14533c; background: var(--green-soft); border: 0.08rem solid #8bc9ad; }
+    .timeline-bar-in_progress { color: #704a00; background: var(--yellow-soft); border: 0.08rem solid #e0b64e; }
+    .timeline-bar-not_started { color: #4f5a6c; background: var(--gray-soft); border: 0.08rem dashed #9ea7b6; }
+    .timeline-bar-terminated_incomplete { color: #7d2934; background: var(--red-soft); border: 0.08rem solid #db9da5; }
+    .timeline-bar-pending { border-style: dashed; }
+    .timeline-bar-clipped::before { content: "‹ "; }
+    .unscheduled-label { align-self: center; grid-row: 1; grid-column: 1 / span var(--columns); z-index: 2; justify-self: start; margin-inline-start: 0.8rem; border-radius: 50rem; padding: 0.3rem 0.55rem; color: var(--gray); background: var(--gray-soft); font-size: 0.7rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.55rem; padding: 0.9rem 1.2rem 1.15rem; border-block-start: 0.08rem solid var(--line); }
+    .legend span { border-radius: 50rem; padding: 0.35rem 0.58rem; font-size: 0.75rem; font-weight: 700; }
+    .legend-completed { color: var(--green); background: var(--green-soft); }
+    .legend-progress { color: var(--yellow); background: var(--yellow-soft); }
+    .legend-planned { color: var(--gray); background: var(--gray-soft); }
+    .legend-rest { color: var(--blue); background: var(--blue-soft); }
+    .legend-terminated { color: var(--red); background: var(--red-soft); }
+    .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.7rem; padding: 1rem 1.2rem 1.2rem; }
+    .metric-card { border: 0.08rem solid var(--line); border-radius: 0.85rem; padding: 0.8rem; background: #fbfcfe; }
+    .metric-card span, .metric-card small { display: block; color: var(--muted); }
+    .metric-card strong { display: block; margin-block: 0.28rem; font-size: 1.65rem; }
+    .signals-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; padding: 1rem 1.2rem 1.2rem; }
+    .signal-card { border: 0.08rem solid var(--line); border-radius: 0.9rem; padding: 0.85rem 0.95rem; background: #fbfcfe; }
+    .signal-card h3 { margin: 0; font-size: 1rem; }
+    .signal-card ul { margin: 0.7rem 0 0; padding-inline-start: 1.15rem; color: var(--muted); }
+    .signal-card li + li { margin-block-start: 0.5rem; }
+    .signal-card code { color: var(--navy); font-weight: 750; }
+    .signal-card li { display: grid; gap: 0.25rem; }
+    .detail-panel { padding: 1.15rem 1.25rem 1.35rem; }
+    .detail-panel[hidden] { display: none; }
+    .detail-panel h2 { margin: 0; }
+    .selected-record { margin: 0.4rem 0 1rem; color: var(--muted); }
+    .notice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+    .notice-block { border: 0.08rem solid var(--line); border-radius: 0.85rem; padding: 0.85rem 0.95rem; }
+    .notice-block[hidden] { display: none; }
+    .notice-block h3 { margin: 0 0 0.55rem; font-size: 0.92rem; }
+    .notice-block ul { margin: 0; padding-inline-start: 1.1rem; color: var(--muted); }
+    .notice-block p { margin: 0; color: var(--muted); line-height: 1.6; }
+    .notice-block-wide { grid-column: 1 / -1; }
+    .detail-error { margin: 0 0 0.9rem; border: 0.08rem solid #d18c95; border-radius: 0.75rem; padding: 0.75rem 0.85rem; color: #7d2934; background: var(--red-soft); }
+    .detail-error[hidden] { display: none; }
+    .detail-actions { display: flex; justify-content: flex-end; margin-block-start: 1rem; }
+    .detail-close-button { border: 0.08rem solid var(--navy); border-radius: 0.72rem; padding: 0.62rem 1.05rem; color: #ffffff; background: var(--navy); cursor: pointer; font-weight: 780; box-shadow: 0 0.22rem 0.55rem rgba(23, 59, 102, 0.22); }
+    .detail-close-button:hover { border-color: var(--navy-hover); background: var(--navy-hover); }
+    .detail-close-button:focus-visible { outline: 0.2rem solid var(--blue); outline-offset: 0.2rem; }
+    .detail-close-button:active { border-color: var(--navy-active); background: var(--navy-active); box-shadow: none; transform: translateY(0.06rem); }
+    .review-required { display: inline-flex; border-radius: 50rem; padding: 0.35rem 0.62rem; color: #704a00; background: var(--yellow-soft); font-weight: 780; }
+    .evidence-entry { margin-block-start: 0.8rem; border-block-start: 0.08rem solid var(--line); padding-block-start: 0.8rem; }
+    .expanded-details { margin-block-start: 0.8rem; }
+    .expanded-details[hidden] { display: none; }
+    .machine-order { margin-block-start: 0.8rem; border-radius: 0.8rem; padding: 0.8rem 1rem; background: var(--navy-soft); }
+    .machine-order h3 { margin: 0; font-size: 0.86rem; }
+    .machine-order ol { margin: 0.55rem 0 0; padding-inline-start: 1.2rem; font-family: ui-monospace, monospace; font-size: 0.72rem; }
+    .source-panel { padding: 1rem 1.2rem 1.2rem; color: var(--muted); line-height: 1.7; }
+    .source-panel code { color: var(--navy); }
+    .noscript-note { display: block; margin-block-start: 0.8rem; border: 0.08rem solid var(--line); border-radius: 0.75rem; padding: 0.75rem; color: var(--muted); background: #fbfcfe; }
+    .page-tooltip { position: fixed; z-index: 1000; pointer-events: none; max-inline-size: min(24rem, calc(100vw - 1.5rem)); max-block-size: calc(100vh - 1rem); overflow: auto; border: 0.08rem solid #50647f; border-radius: 0.72rem; padding: 0.72rem 0.8rem; color: #ffffff; background: #17243b; box-shadow: 0 0.9rem 2.2rem rgba(9, 19, 33, 0.28); font-size: 0.76rem; line-height: 1.5; }
+    .page-tooltip[hidden] { display: none; }
+    .page-tooltip strong, .page-tooltip span { display: block; }
+    .page-tooltip .tooltip-status, .page-tooltip .tooltip-date { color: #c9d8e8; }
+    .page-tooltip .tooltip-summary { margin-block-start: 0.35rem; }
+    @media (max-width: 760px) {
+      .page-shell { padding: 0.7rem; }
+      .summary-grid, .metric-grid, .signals-grid, .notice-grid { grid-template-columns: 1fr; }
+      .notice-block-wide { grid-column: auto; }
+      .panel-heading { align-items: start; flex-direction: column; }
+      .gantt-header, .gantt-row { grid-template-columns: 17rem minmax(50rem, 1fr); }
+      [data-view="weekly"] .gantt-header, [data-view="weekly"] .gantt-row { grid-template-columns: 17rem minmax(26rem, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-tooltip" id="record-tooltip" role="tooltip" hidden>
+    <strong id="tooltip-title"></strong>
+    <span class="tooltip-status" id="tooltip-status"></span>
+    <span class="tooltip-date" id="tooltip-date"></span>
+    <span class="tooltip-summary" id="tooltip-summary"></span>
+  </div>
+  <main class="page-shell" data-project-control-ui data-generator-version="1.2.0" data-view="daily" data-order="ascending" data-fallback-active="false" style="--day-columns:14;--week-columns:3">
+    <header class="hero" aria-labelledby="page-title">
+      <p class="eyebrow">SeaFlow Library</p>
+      <h1 id="page-title">SeaFlow Library · 项目介绍与控制</h1>
+      <p class="hero-tagline">项目状态，清晰到每一个正式工作日</p>
+      <p class="hero-copy">离线只读项目审查视图；点击母级版本名称或其时间条可查看该版本详情。</p>
+    </header>
+    <section class="fallback-notice" role="alert" hidden>数据校验失败，当前显示上一有效快照</section>
+    <section class="summary-grid" aria-label="当前项目状态摘要">
+      <article class="summary-card"><span>当前版本</span><strong>V0.8</strong><small>已完成</small></article>
+      <article class="summary-card"><span>当前阶段</span><strong>V0.8H</strong><small>已完成</small></article>
+      <article class="summary-card"><span>时间基准</span><strong>UTC+8</strong><small>固定治理时区</small></article>
+      <article class="summary-card"><span>工作日切换</span><strong>04:00</strong><small>固定工作日边界</small></article>
+      <article class="summary-card"><span>当前进程</span><strong>封版</strong><small>以正式公开快照为准</small></article>
+      <article class="summary-card"><span>数据使用</span><strong>只读审查</strong><small>不提供编辑或发布操作</small></article>
+    </section>
+
+    <section class="panel" aria-labelledby="gantt-title">
+      <div class="panel-heading">
+        <div><h2 id="gantt-title">版本与阶段甘特视图</h2><p>默认按规范升序显示；母级名称打开详情，独立箭头仅展开或收起子阶段。</p></div>
+        <div class="toolbar" aria-label="甘特视图控制">
+          <div class="control-group" role="group" aria-label="时间视图">
+            <button type="button" id="view-day" aria-pressed="true" aria-controls="gantt-scroll">日视图</button>
+            <button type="button" id="view-week" aria-pressed="false" aria-controls="gantt-scroll">周视图</button>
+          </div>
+          <div class="control-group" role="group" aria-label="路线图顺序">
+            <button type="button" id="order-asc" aria-pressed="true" aria-controls="gantt-groups">升序</button>
+            <button type="button" id="order-desc" aria-pressed="false" aria-controls="gantt-groups">降序</button>
+          </div>
+        </div>
+      </div>
+      <div class="gantt-scroll" id="gantt-scroll" tabindex="0" aria-label="可横向滚动的项目时间轴">
+        <div class="gantt-canvas">
+          <div class="gantt-header"><div class="record-heading">版本 / 阶段</div><div class="axis-grid"><span class="axis-cell day-axis-cell" data-date="2026-07-09" data-state="development"><strong>7.9</strong><small>开发</small></span>
+<span class="axis-cell day-axis-cell" data-date="2026-07-10" data-state="development"><strong>7.10</strong><small>开发</small></span>
+<span class="axis-cell day-axis-cell" data-date="2026-07-11" data-state="development"><strong>7.11</strong><small>开发</small></span>
+<span class="axis-cell day-axis-cell" data-date="2026-07-12" data-state="development"><strong>7.12</strong><small>开发</small></span>
+<span class="axis-cell day-axis-cell" data-date="2026-07-13" data-state="development"><strong>7.13</strong><small>开发</small></span>
+<span class="axis-cell day-axis-cell" data-date="2026-07-14" data-state="development"><strong>7.14</strong><small>开发</small></span>
+<span class="axis-cell day-axis-cell" data-date="2026-07-15" data-state="development"><strong>7.15</strong><small>开发</small></span>
+<span class="axis-cell day-axis-cell" data-date="2026-07-16" data-state="development"><strong>7.16</strong><small>开发</small></span>
+<span class="axis-cell day-axis-cell" data-date="2026-07-17" data-state="development"><strong>7.17</strong><small>开发</small></span>
+<span class="axis-cell day-axis-cell" data-date="2026-07-18" data-state="development"><strong>7.18</strong><small>开发</small></span>
+<span class="axis-cell day-axis-cell" data-date="2026-07-19" data-state="development"><strong>7.19</strong><small>开发</small></span>
+<span class="axis-cell day-axis-cell" data-date="2026-07-20" data-state="development"><strong>7.20</strong><small>开发</small></span>
+<span class="axis-cell day-axis-cell" data-date="2026-07-21" data-state="development"><strong>7.21</strong><small>开发</small></span>
+<span class="axis-cell day-axis-cell" data-date="2026-07-22" data-state="development"><strong>7.22</strong><small>开发</small></span><span class="axis-cell week-axis-cell"><strong>第1工作周｜7.9–7.12</strong><small>内容截至 07-12</small></span>
+<span class="axis-cell week-axis-cell"><strong>第2工作周｜7.13–7.19</strong><small>内容截至 07-19</small></span>
+<span class="axis-cell week-axis-cell"><strong>第3工作周｜7.20–7.26</strong><small>内容截至 07-22</small></span></div></div>
+          <ol class="gantt-groups-list" id="gantt-groups" aria-label="版本与阶段层级"><li class="gantt-group gantt-parent-item" data-canonical-order="0" aria-level="1"><div class="gantt-row gantt-row-major" data-record-key="FOUNDATION" data-status="completed"><div class="record-cell"><button type="button" class="record-detail-trigger record-tooltip-trigger record-trigger record-trigger-major" data-record-key="FOUNDATION" aria-expanded="false" aria-controls="detail-panel" aria-describedby="record-description-FOUNDATION"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">FOUNDATION</span><span class="record-title">基础建设</span><span class="record-dates">实际 2026-07-07–2026-07-08 · 历史边界前开始</span></button><span class="visually-hidden" id="record-description-FOUNDATION">基础建设；状态：已完成；日期：实际 2026-07-07–2026-07-08 · 历史边界前开始</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><button type="button" class="record-detail-trigger record-tooltip-trigger timeline-bar timeline-bar-completed timeline-bar-clipped" data-record-key="FOUNDATION" data-status="completed" data-day-start="1" data-day-span="1" data-week-start="1" data-week-span="1" aria-describedby="record-description-FOUNDATION" style="--bar-start:1;--bar-span:1" aria-expanded="false" aria-controls="detail-panel"><span class="timeline-bar-label">FOUNDATION</span></button></div></div></li>
+<li class="gantt-group gantt-parent-item" data-canonical-order="1" aria-level="1"><div class="gantt-row gantt-row-major" data-record-key="V0.1" data-status="completed"><div class="record-cell"><button type="button" class="record-detail-trigger record-tooltip-trigger record-trigger record-trigger-major" data-record-key="V0.1" aria-expanded="false" aria-controls="detail-panel" aria-describedby="record-description-V0.1"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.1</span><span class="record-title">中国海商法检索与说明</span><span class="record-dates">实际 2026-07-07–2026-07-09 · 历史边界前开始</span></button><span class="visually-hidden" id="record-description-V0.1">中国海商法检索与说明；状态：已完成；日期：实际 2026-07-07–2026-07-09 · 历史边界前开始</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><button type="button" class="record-detail-trigger record-tooltip-trigger timeline-bar timeline-bar-completed timeline-bar-clipped" data-record-key="V0.1" data-status="completed" data-day-start="1" data-day-span="1" data-week-start="1" data-week-span="1" aria-describedby="record-description-V0.1" style="--bar-start:1;--bar-span:1" aria-expanded="false" aria-controls="detail-panel"><span class="timeline-bar-label">V0.1</span></button></div></div></li>
+<li class="gantt-group gantt-parent-item" data-canonical-order="2" aria-level="1"><div class="gantt-row gantt-row-major" data-record-key="V0.2" data-status="completed"><div class="record-cell"><button type="button" class="record-detail-trigger record-tooltip-trigger record-trigger record-trigger-major" data-record-key="V0.2" aria-expanded="false" aria-controls="detail-panel" aria-describedby="record-description-V0.2"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.2</span><span class="record-title">日本海上货物运输法检索</span><span class="record-dates">实际 2026-07-09–2026-07-11</span></button><span class="visually-hidden" id="record-description-V0.2">日本海上货物运输法检索；状态：已完成；日期：实际 2026-07-09–2026-07-11</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><button type="button" class="record-detail-trigger record-tooltip-trigger timeline-bar timeline-bar-completed" data-record-key="V0.2" data-status="completed" data-day-start="1" data-day-span="3" data-week-start="1" data-week-span="1" aria-describedby="record-description-V0.2" style="--bar-start:1;--bar-span:3" aria-expanded="false" aria-controls="detail-panel"><span class="timeline-bar-label">V0.2</span></button></div></div></li>
+<li class="gantt-group gantt-parent-item" data-canonical-order="3" aria-level="1"><div class="gantt-row gantt-row-major" data-record-key="V0.3" data-status="completed"><div class="record-cell"><button type="button" class="record-detail-trigger record-tooltip-trigger record-trigger record-trigger-major" data-record-key="V0.3" aria-expanded="false" aria-controls="detail-panel" aria-describedby="record-description-V0.3"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.3</span><span class="record-title">日本法受约束说明</span><span class="record-dates">实际 2026-07-11</span></button><span class="visually-hidden" id="record-description-V0.3">日本法受约束说明；状态：已完成；日期：实际 2026-07-11</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><button type="button" class="record-detail-trigger record-tooltip-trigger timeline-bar timeline-bar-completed" data-record-key="V0.3" data-status="completed" data-day-start="3" data-day-span="1" data-week-start="1" data-week-span="1" aria-describedby="record-description-V0.3" style="--bar-start:3;--bar-span:1" aria-expanded="false" aria-controls="detail-panel"><span class="timeline-bar-label">V0.3</span></button></div></div></li>
+<li class="gantt-group gantt-parent-item" data-canonical-order="4" aria-level="1"><div class="gantt-row gantt-row-major" data-record-key="V0.4" data-status="completed"><div class="record-cell"><button type="button" class="record-detail-trigger record-tooltip-trigger record-trigger record-trigger-major" data-record-key="V0.4" aria-expanded="false" aria-controls="detail-panel" aria-describedby="record-description-V0.4"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.4</span><span class="record-title">海牙—维斯比规则结构化法源</span><span class="record-dates">实际 2026-07-11–2026-07-12</span></button><span class="visually-hidden" id="record-description-V0.4">海牙—维斯比规则结构化法源；状态：已完成；日期：实际 2026-07-11–2026-07-12</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><button type="button" class="record-detail-trigger record-tooltip-trigger timeline-bar timeline-bar-completed" data-record-key="V0.4" data-status="completed" data-day-start="3" data-day-span="2" data-week-start="1" data-week-span="1" aria-describedby="record-description-V0.4" style="--bar-start:3;--bar-span:2" aria-expanded="false" aria-controls="detail-panel"><span class="timeline-bar-label">V0.4</span></button></div></div></li>
+<li class="gantt-group gantt-parent-item" data-canonical-order="5" aria-level="1"><div class="gantt-row gantt-row-major" data-record-key="V0.5" data-status="completed"><div class="record-cell"><button type="button" class="record-detail-trigger record-tooltip-trigger record-trigger record-trigger-major" data-record-key="V0.5" aria-expanded="false" aria-controls="detail-panel" aria-describedby="record-description-V0.5"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.5</span><span class="record-title">生态环境法结构化法源</span><span class="record-dates">实际 2026-07-12–2026-07-13</span></button><span class="visually-hidden" id="record-description-V0.5">生态环境法结构化法源；状态：已完成；日期：实际 2026-07-12–2026-07-13</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><button type="button" class="record-detail-trigger record-tooltip-trigger timeline-bar timeline-bar-completed" data-record-key="V0.5" data-status="completed" data-day-start="4" data-day-span="2" data-week-start="1" data-week-span="2" aria-describedby="record-description-V0.5" style="--bar-start:4;--bar-span:2" aria-expanded="false" aria-controls="detail-panel"><span class="timeline-bar-label">V0.5</span></button></div></div></li>
+<li class="gantt-group gantt-parent-item" data-canonical-order="6" aria-level="1"><div class="gantt-row gantt-row-major" data-record-key="V0.6" data-status="completed"><div class="record-cell"><button type="button" class="record-detail-trigger record-tooltip-trigger record-trigger record-trigger-major" data-record-key="V0.6" aria-expanded="false" aria-controls="detail-panel" aria-describedby="record-description-V0.6"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.6</span><span class="record-title">法源能力编排与网关</span><span class="record-dates">实际 2026-07-14–2026-07-15</span></button><span class="visually-hidden" id="record-description-V0.6">法源能力编排与网关；状态：已完成；日期：实际 2026-07-14–2026-07-15</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><button type="button" class="record-detail-trigger record-tooltip-trigger timeline-bar timeline-bar-completed" data-record-key="V0.6" data-status="completed" data-day-start="6" data-day-span="2" data-week-start="2" data-week-span="1" aria-describedby="record-description-V0.6" style="--bar-start:6;--bar-span:2" aria-expanded="false" aria-controls="detail-panel"><span class="timeline-bar-label">V0.6</span></button></div></div></li>
+<li class="gantt-group gantt-parent-item" data-canonical-order="7" aria-level="1"><div class="gantt-row gantt-row-major" data-record-key="V0.7" data-status="completed"><div class="record-cell"><button type="button" class="record-detail-trigger record-tooltip-trigger record-trigger record-trigger-major" data-record-key="V0.7" aria-expanded="false" aria-controls="detail-panel" aria-describedby="record-description-V0.7"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.7</span><span class="record-title">《联合国海洋法公约》法源包</span><span class="record-dates">实际 2026-07-15–2026-07-16</span></button><span class="visually-hidden" id="record-description-V0.7">《联合国海洋法公约》法源包；状态：已完成；日期：实际 2026-07-15–2026-07-16</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><button type="button" class="record-detail-trigger record-tooltip-trigger timeline-bar timeline-bar-completed" data-record-key="V0.7" data-status="completed" data-day-start="7" data-day-span="2" data-week-start="2" data-week-span="1" aria-describedby="record-description-V0.7" style="--bar-start:7;--bar-span:2" aria-expanded="false" aria-controls="detail-panel"><span class="timeline-bar-label">V0.7</span></button></div></div></li>
+<li class="gantt-group gantt-parent-item" data-canonical-order="8" aria-level="1"><div class="gantt-row gantt-row-major" data-record-key="V0.8" data-status="completed"><div class="record-cell"><button type="button" class="record-detail-trigger record-tooltip-trigger record-trigger record-trigger-major" data-record-key="V0.8" aria-expanded="false" aria-controls="detail-panel" aria-describedby="record-description-V0.8"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.8</span><span class="record-title">项目控制与动态甘特图</span><span class="record-dates">实际 2026-07-17–2026-07-22</span></button><button type="button" class="major-expand" data-expand-key="V0.8" aria-expanded="false" aria-controls="substage-list-V0.8" aria-label="展开 V0.8 子阶段"><span class="major-expand-icon" aria-hidden="true">⌄</span></button><span class="visually-hidden" id="record-description-V0.8">项目控制与动态甘特图；状态：已完成；日期：实际 2026-07-17–2026-07-22</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><button type="button" class="record-detail-trigger record-tooltip-trigger timeline-bar timeline-bar-completed" data-record-key="V0.8" data-status="completed" data-day-start="9" data-day-span="6" data-week-start="2" data-week-span="2" aria-describedby="record-description-V0.8" style="--bar-start:9;--bar-span:6" aria-expanded="false" aria-controls="detail-panel"><span class="timeline-bar-label">V0.8</span></button></div></div><ol class="gantt-substage-list" id="substage-list-V0.8" hidden aria-label="V0.8 子阶段"><li class="gantt-row gantt-row-substage" data-record-key="V0.8A" data-status="completed" aria-level="2"><div class="record-cell"><div class="record-tooltip-trigger record-trigger record-trigger-substage" data-record-key="V0.8A" aria-describedby="record-description-V0.8A"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.8A</span><span class="record-title">项目控制需求与治理契约</span><span class="record-dates">实际 2026-07-17</span></div><span class="visually-hidden" id="record-description-V0.8A">项目控制需求与治理契约；状态：已完成；日期：实际 2026-07-17</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="record-tooltip-trigger timeline-bar timeline-bar-completed substage-timeline-bar" data-record-key="V0.8A" data-status="completed" data-day-start="9" data-day-span="1" data-week-start="2" data-week-span="1" aria-describedby="record-description-V0.8A" style="--bar-start:9;--bar-span:1"><span class="timeline-bar-label">V0.8A</span></span></div></li><li class="gantt-row gantt-row-substage" data-record-key="V0.8B" data-status="completed" aria-level="2"><div class="record-cell"><div class="record-tooltip-trigger record-trigger record-trigger-substage" data-record-key="V0.8B" aria-describedby="record-description-V0.8B"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.8B</span><span class="record-title">规范清单与状态模型</span><span class="record-dates">实际 2026-07-17</span></div><span class="visually-hidden" id="record-description-V0.8B">规范清单与状态模型；状态：已完成；日期：实际 2026-07-17</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="record-tooltip-trigger timeline-bar timeline-bar-completed substage-timeline-bar" data-record-key="V0.8B" data-status="completed" data-day-start="9" data-day-span="1" data-week-start="2" data-week-span="1" aria-describedby="record-description-V0.8B" style="--bar-start:9;--bar-span:1"><span class="timeline-bar-label">V0.8B</span></span></div></li><li class="gantt-row gantt-row-substage" data-record-key="V0.8C" data-status="completed" aria-level="2"><div class="record-cell"><div class="record-tooltip-trigger record-trigger record-trigger-substage" data-record-key="V0.8C" aria-describedby="record-description-V0.8C"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.8C</span><span class="record-title">里程碑证据与历史补录</span><span class="record-dates">实际 2026-07-17–2026-07-18</span></div><span class="visually-hidden" id="record-description-V0.8C">里程碑证据与历史补录；状态：已完成；日期：实际 2026-07-17–2026-07-18</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="record-tooltip-trigger timeline-bar timeline-bar-completed substage-timeline-bar" data-record-key="V0.8C" data-status="completed" data-day-start="9" data-day-span="2" data-week-start="2" data-week-span="1" aria-describedby="record-description-V0.8C" style="--bar-start:9;--bar-span:2"><span class="timeline-bar-label">V0.8C</span></span></div></li><li class="gantt-row gantt-row-substage" data-record-key="V0.8D" data-status="completed" aria-level="2"><div class="record-cell"><div class="record-tooltip-trigger record-trigger record-trigger-substage" data-record-key="V0.8D" aria-describedby="record-description-V0.8D"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.8D</span><span class="record-title">确定性项目控制校验</span><span class="record-dates">实际 2026-07-18</span></div><span class="visually-hidden" id="record-description-V0.8D">确定性项目控制校验；状态：已完成；日期：实际 2026-07-18</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="record-tooltip-trigger timeline-bar timeline-bar-completed substage-timeline-bar" data-record-key="V0.8D" data-status="completed" data-day-start="10" data-day-span="1" data-week-start="2" data-week-span="1" aria-describedby="record-description-V0.8D" style="--bar-start:10;--bar-span:1"><span class="timeline-bar-label">V0.8D</span></span></div></li><li class="gantt-row gantt-row-substage" data-record-key="V0.8E" data-status="completed" aria-level="2"><div class="record-cell"><div class="record-tooltip-trigger record-trigger record-trigger-substage" data-record-key="V0.8E" aria-describedby="record-description-V0.8E"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.8E</span><span class="record-title">说明文档与路线图同步</span><span class="record-dates">实际 2026-07-18</span></div><span class="visually-hidden" id="record-description-V0.8E">说明文档与路线图同步；状态：已完成；日期：实际 2026-07-18</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="record-tooltip-trigger timeline-bar timeline-bar-completed substage-timeline-bar" data-record-key="V0.8E" data-status="completed" data-day-start="10" data-day-span="1" data-week-start="2" data-week-span="1" aria-describedby="record-description-V0.8E" style="--bar-start:10;--bar-span:1"><span class="timeline-bar-label">V0.8E</span></span></div></li><li class="gantt-row gantt-row-substage" data-record-key="V0.8F" data-status="completed" aria-level="2"><div class="record-cell"><div class="record-tooltip-trigger record-trigger record-trigger-substage" data-record-key="V0.8F" aria-describedby="record-description-V0.8F"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.8F</span><span class="record-title">项目控制快照与回退</span><span class="record-dates">实际 2026-07-18–2026-07-19</span></div><span class="visually-hidden" id="record-description-V0.8F">项目控制快照与回退；状态：已完成；日期：实际 2026-07-18–2026-07-19</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="record-tooltip-trigger timeline-bar timeline-bar-completed substage-timeline-bar" data-record-key="V0.8F" data-status="completed" data-day-start="10" data-day-span="2" data-week-start="2" data-week-span="1" aria-describedby="record-description-V0.8F" style="--bar-start:10;--bar-span:2"><span class="timeline-bar-label">V0.8F</span></span></div></li><li class="gantt-row gantt-row-substage" data-record-key="V0.8G" data-status="completed" aria-level="2"><div class="record-cell"><div class="record-tooltip-trigger record-trigger record-trigger-substage" data-record-key="V0.8G" aria-describedby="record-description-V0.8G"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.8G</span><span class="record-title">动态甘特图与状态面板</span><span class="record-dates">实际 2026-07-18–2026-07-19</span></div><span class="visually-hidden" id="record-description-V0.8G">动态甘特图与状态面板；状态：已完成；日期：实际 2026-07-18–2026-07-19</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="record-tooltip-trigger timeline-bar timeline-bar-completed substage-timeline-bar" data-record-key="V0.8G" data-status="completed" data-day-start="10" data-day-span="2" data-week-start="2" data-week-span="1" aria-describedby="record-description-V0.8G" style="--bar-start:10;--bar-span:2"><span class="timeline-bar-label">V0.8G</span></span></div></li><li class="gantt-row gantt-row-substage" data-record-key="V0.8H" data-status="completed" aria-level="2"><div class="record-cell"><div class="record-tooltip-trigger record-trigger record-trigger-substage" data-record-key="V0.8H" aria-describedby="record-description-V0.8H"><span class="status-badge" data-status="completed"><span aria-hidden="true">●</span> 已完成</span><span class="record-id">V0.8H</span><span class="record-title">项目控制全链路最终锁定</span><span class="record-dates">实际 2026-07-19–2026-07-22</span></div><span class="visually-hidden" id="record-description-V0.8H">项目控制全链路最终锁定；状态：已完成；日期：实际 2026-07-19–2026-07-22</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="record-tooltip-trigger timeline-bar timeline-bar-completed substage-timeline-bar" data-record-key="V0.8H" data-status="completed" data-day-start="11" data-day-span="4" data-week-start="2" data-week-span="2" aria-describedby="record-description-V0.8H" style="--bar-start:11;--bar-span:4"><span class="timeline-bar-label">V0.8H</span></span></div></li></ol></li>
+<li class="gantt-group gantt-parent-item" data-canonical-order="9" aria-level="1"><div class="gantt-row gantt-row-major" data-record-key="V0.9" data-status="not_started"><div class="record-cell"><button type="button" class="record-detail-trigger record-tooltip-trigger record-trigger record-trigger-major" data-record-key="V0.9" aria-expanded="false" aria-controls="detail-panel" aria-describedby="record-description-V0.9"><span class="status-badge" data-status="not_started"><span aria-hidden="true">○</span> 未开始</span><span class="record-id">V0.9</span><span class="record-title">法律研究问答规划</span><span class="record-dates">日期待定</span></button><span class="visually-hidden" id="record-description-V0.9">法律研究问答规划；状态：未开始；日期：日期待定</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="unscheduled-label">日期待定</span></div></div></li>
+<li class="gantt-group gantt-parent-item" data-canonical-order="10" aria-level="1"><div class="gantt-row gantt-row-major" data-record-key="V1.0" data-status="not_started"><div class="record-cell"><button type="button" class="record-detail-trigger record-tooltip-trigger record-trigger record-trigger-major" data-record-key="V1.0" aria-expanded="false" aria-controls="detail-panel" aria-describedby="record-description-V1.0"><span class="status-badge" data-status="not_started"><span aria-hidden="true">○</span> 未开始</span><span class="record-id">V1.0</span><span class="record-title">首个完整可测试版本</span><span class="record-dates">日期待定</span></button><span class="visually-hidden" id="record-description-V1.0">首个完整可测试版本；状态：未开始；日期：日期待定</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="unscheduled-label">日期待定</span></div></div></li>
+<li class="gantt-group gantt-parent-item" data-canonical-order="11" aria-level="1"><div class="gantt-row gantt-row-major" data-record-key="POST-V1-TESTING" data-status="not_started"><div class="record-cell"><div class="record-trigger record-trigger-major" ><span class="status-badge" data-status="not_started"><span aria-hidden="true">○</span> 未开始</span><span class="record-id">POST-V1-TESTING</span><span class="record-title">V1 后子代理测试</span><span class="record-dates">日期待定</span></div><span class="visually-hidden" id="record-description-POST-V1-TESTING">V1 后子代理测试；状态：未开始；日期：日期待定</span></div><div class="timeline-grid"><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell day-timeline-cell" data-state="development"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="timeline-cell week-timeline-cell"></span><span class="unscheduled-label">日期待定</span></div></div></li></ol>
+        </div>
+      </div>
+      <div class="legend" aria-label="状态图例">
+        <span class="legend-completed">● 已完成</span><span class="legend-progress">● 进行中</span><span class="legend-planned">○ 未开始</span><span class="legend-rest">◆ 休息</span><span class="legend-terminated">▨ 已终止（未完成）</span>
+      </div>
+    </section>
+
+    <section class="panel detail-panel" id="detail-panel" aria-labelledby="detail-title" hidden>
+      <div class="panel-heading"><div><h2 id="detail-title">母级版本详情</h2><p class="selected-record" id="selected-record">选择一个母级版本查看其公开介绍。</p></div></div>
+      <p class="detail-error" id="detail-error" role="alert" hidden>无法显示该版本详情：公开详情索引缺失。</p>
+      <div class="notice-grid">
+        <article class="notice-block notice-block-wide" id="detail-work-block"><h3>主要工作</h3><p id="detail-work-summary"></p></article>
+        <article class="notice-block" id="detail-evidence-block" hidden><h3>正式发布或验证证据</h3><p id="detail-release-evidence"></p></article>
+        <article class="notice-block" id="detail-boundary-block" hidden><h3>能力边界与使用说明</h3><p id="detail-capability-boundary"></p></article>
+        <article class="notice-block notice-block-wide" id="detail-planning-block" hidden><h3>规划依据</h3><p id="detail-planning-basis"></p></article>
+      </div>
+      <div class="detail-actions"><button type="button" class="detail-close-button" id="detail-close" aria-label="关闭详情">关闭详情</button></div>
+      <noscript class="noscript-note">JavaScript 已禁用：默认日视图和规范升序仍可阅读；详情功能不可用。</noscript>
+    </section>
+    <script type="application/json" id="project-control-data">{"major_details":{"FOUNDATION":{"capability_boundary_zh":"该阶段建立工程底座，不代表后续各法域能力或法律研究问答流程已经完成。","date_summary_zh":"实际 2026-07-07–2026-07-08 · 历史边界前开始","display_title_zh":"基础建设","release_evidence_zh":"基础目录、离线运行路径和首批结构化资料已经版本化发布并由项目记录确认。","semantic_id":"FOUNDATION","status_label_zh":"已完成","work_summary_zh":"完成离线优先的法律资料库骨架、确定性数据组织与基础检索支撑，为后续版本提供可复用的工程底座。"},"V0.1":{"capability_boundary_zh":"结果限于已登记的中国海商法法源与已实现的检索说明范围。","date_summary_zh":"实际 2026-07-07–2026-07-09 · 历史边界前开始","display_title_zh":"中国海商法检索与说明","release_evidence_zh":"中国海商法检索与说明能力已经随 V0.1 正式版本记录完成发布。","semantic_id":"V0.1","status_label_zh":"已完成","work_summary_zh":"完成中国海商法法源的结构化整理、确定性检索和面向使用者的基础说明。"},"V0.2":{"capability_boundary_zh":"该版本提供检索能力，不将检索结果扩张为不受约束的法律结论。","date_summary_zh":"实际 2026-07-09–2026-07-11","display_title_zh":"日本海上货物运输法检索","release_evidence_zh":"日本海上货物运输法检索能力已经随 V0.2 正式版本记录完成发布。","semantic_id":"V0.2","status_label_zh":"已完成","work_summary_zh":"完成日本海上货物运输法资料的结构化组织和确定性检索入口。"},"V0.3":{"capability_boundary_zh":"说明严格依赖已登记法源，不替代个案法律意见或未收录材料。","date_summary_zh":"实际 2026-07-11","display_title_zh":"日本法受约束说明","release_evidence_zh":"日本法受约束说明已经随 V0.3 正式版本记录完成发布。","semantic_id":"V0.3","status_label_zh":"已完成","work_summary_zh":"在既有日本法检索基础上完成受约束说明，使回答范围、依据和限制能够被审查。"},"V0.4":{"capability_boundary_zh":"该法源包只覆盖已核定的规则文本与结构，不推断未登记的国内实施法。","date_summary_zh":"实际 2026-07-11–2026-07-12","display_title_zh":"海牙—维斯比规则结构化法源","release_evidence_zh":"海牙—维斯比规则法源包已经随 V0.4 正式版本记录完成发布。","semantic_id":"V0.4","status_label_zh":"已完成","work_summary_zh":"完成海牙—维斯比规则的结构化法源包、稳定定位方式和检索支撑。"},"V0.5":{"capability_boundary_zh":"能力范围以已登记生态环境法资料为限，不对资料库外内容作完整性承诺。","date_summary_zh":"实际 2026-07-12–2026-07-13","display_title_zh":"生态环境法结构化法源","release_evidence_zh":"生态环境法结构化法源能力已经随 V0.5 正式版本记录完成发布。","semantic_id":"V0.5","status_label_zh":"已完成","work_summary_zh":"完成生态环境法资料的结构化整理、检索入口和受约束说明支持。"},"V0.6":{"capability_boundary_zh":"网关只路由已经登记的能力，不自动创建新法源或扩大既有权限。","date_summary_zh":"实际 2026-07-14–2026-07-15","display_title_zh":"法源能力编排与网关","release_evidence_zh":"法源能力编排与网关已经随 V0.6 正式版本记录完成发布。","semantic_id":"V0.6","status_label_zh":"已完成","work_summary_zh":"完成显式法源能力编排与统一网关，使不同法源包能够通过稳定入口被选择和调用。"},"V0.7":{"capability_boundary_zh":"该版本覆盖已登记的公约资料，不代替对相关判例、国内法或事实争议的独立审查。","date_summary_zh":"实际 2026-07-15–2026-07-16","display_title_zh":"《联合国海洋法公约》法源包","release_evidence_zh":"《联合国海洋法公约》法源包已经随 V0.7 正式版本记录完成发布。","semantic_id":"V0.7","status_label_zh":"已完成","work_summary_zh":"完成《联合国海洋法公约》的结构化法源包、条文定位和确定性检索支持。"},"V0.8":{"capability_boundary_zh":"页面只读呈现正式项目状态；它不提供编辑、审批、发布或治理状态变更操作。","date_summary_zh":"实际 2026-07-17–2026-07-22","display_title_zh":"项目控制与动态甘特图","release_evidence_zh":"V0.8A 至 V0.8H 的正式记录、快照与发布门禁共同构成 V0.8 封版证据。","semantic_id":"V0.8","status_label_zh":"已完成","work_summary_zh":"完成结构化项目控制、确定性校验、文档渲染、快照回退、动态甘特图和端到端最终锁定。"},"V0.9":{"capability_boundary_zh":"Spark experiments 仅作为未来设计参考，不属于生产实现，也不会被导入正式法源或主线能力。","date_summary_zh":"日期待定","display_title_zh":"法律研究问答规划","planning_basis_zh":"该阶段仍为未来规划，计划以 V0.8 封版后的正式治理契约、审查证据和 owner 决策为实施依据。","semantic_id":"V0.9","status_label_zh":"未开始","work_summary_zh":"未来将建立 Hussein 的身份、雇佣与权限契约；实现法源导入请求、路由、提案与 owner 决策工作流；形成 legal-source-ingestion skill；以 Hamburg Rules 开展试验性导入；并定义 Citation Packet 与 SeaFlow Agent、资料库之间的访问契约。"},"V1.0":{"capability_boundary_zh":"V1.0 完成后仍计划进行独立子代理测试；测试结论和后续版本方向将由未来正式决策确定。","date_summary_zh":"日期待定","display_title_zh":"首个完整可测试版本","planning_basis_zh":"该阶段仍为未来规划，只有在 V0.9 的身份权限、导入治理和访问契约完成审查后才进入集成与验证。","semantic_id":"V1.0","status_label_zh":"未开始","work_summary_zh":"未来将集成已发布法源能力，形成统一查询与法源路由，并通过 Citation Packet 调用串联请求、授权、引证与审查工作流，交付首个完整且可测试的产品。"}},"substage_hover":{"V0.8A":{"date_summary_zh":"实际 2026-07-17","display_title_zh":"项目控制需求与治理契约","semantic_id":"V0.8A","status_label_zh":"已完成"},"V0.8B":{"date_summary_zh":"实际 2026-07-17","display_title_zh":"规范清单与状态模型","semantic_id":"V0.8B","status_label_zh":"已完成"},"V0.8C":{"date_summary_zh":"实际 2026-07-17–2026-07-18","display_title_zh":"里程碑证据与历史补录","semantic_id":"V0.8C","status_label_zh":"已完成"},"V0.8D":{"date_summary_zh":"实际 2026-07-18","display_title_zh":"确定性项目控制校验","semantic_id":"V0.8D","status_label_zh":"已完成"},"V0.8E":{"date_summary_zh":"实际 2026-07-18","display_title_zh":"说明文档与路线图同步","semantic_id":"V0.8E","status_label_zh":"已完成"},"V0.8F":{"date_summary_zh":"实际 2026-07-18–2026-07-19","display_title_zh":"项目控制快照与回退","semantic_id":"V0.8F","status_label_zh":"已完成"},"V0.8G":{"date_summary_zh":"实际 2026-07-18–2026-07-19","display_title_zh":"动态甘特图与状态面板","semantic_id":"V0.8G","status_label_zh":"已完成"},"V0.8H":{"date_summary_zh":"实际 2026-07-19–2026-07-22","display_title_zh":"项目控制全链路最终锁定","semantic_id":"V0.8H","status_label_zh":"已完成"}}}</script>
+    <script>
+      (function () {
+        "use strict";
+        const root = document.querySelector("[data-project-control-ui]");
+        const data = JSON.parse(document.getElementById("project-control-data").textContent);
+        const groups = document.getElementById("gantt-groups");
+        const dayButton = document.getElementById("view-day");
+        const weekButton = document.getElementById("view-week");
+        const ascButton = document.getElementById("order-asc");
+        const descButton = document.getElementById("order-desc");
+        const detailPanel = document.getElementById("detail-panel");
+        const detailClose = document.getElementById("detail-close");
+        const detailTitle = document.getElementById("detail-title");
+        const selectedRecord = document.getElementById("selected-record");
+        const detailError = document.getElementById("detail-error");
+        const detailWorkBlock = document.getElementById("detail-work-block");
+        const detailWorkSummary = document.getElementById("detail-work-summary");
+        const detailEvidenceBlock = document.getElementById("detail-evidence-block");
+        const detailReleaseEvidence = document.getElementById("detail-release-evidence");
+        const detailBoundaryBlock = document.getElementById("detail-boundary-block");
+        const detailCapabilityBoundary = document.getElementById("detail-capability-boundary");
+        const detailPlanningBlock = document.getElementById("detail-planning-block");
+        const detailPlanningBasis = document.getElementById("detail-planning-basis");
+        const pageTooltip = document.getElementById("record-tooltip");
+        const tooltipTitle = document.getElementById("tooltip-title");
+        const tooltipStatus = document.getElementById("tooltip-status");
+        const tooltipDate = document.getElementById("tooltip-date");
+        const tooltipSummary = document.getElementById("tooltip-summary");
+        let tooltipTarget = null;
+        let lastDetailTrigger = null;
+
+        function setView(view) {
+          root.dataset.view = view;
+          dayButton.setAttribute("aria-pressed", String(view === "daily"));
+          weekButton.setAttribute("aria-pressed", String(view === "weekly"));
+          document.querySelectorAll(".timeline-bar").forEach(function (bar) {
+            const start = view === "daily" ? bar.dataset.dayStart : bar.dataset.weekStart;
+            const span = view === "daily" ? bar.dataset.daySpan : bar.dataset.weekSpan;
+            bar.style.setProperty("--bar-start", start);
+            bar.style.setProperty("--bar-span", span);
+          });
+        }
+
+        function setOrder(order) {
+          root.dataset.order = order;
+          ascButton.setAttribute("aria-pressed", String(order === "ascending"));
+          descButton.setAttribute("aria-pressed", String(order === "descending"));
+          const items = Array.from(groups.querySelectorAll(".gantt-group"));
+          items.sort(function (left, right) {
+            const result = Number(left.dataset.canonicalOrder) - Number(right.dataset.canonicalOrder);
+            return order === "ascending" ? result : -result;
+          });
+          items.forEach(function (item) { groups.appendChild(item); });
+        }
+
+        function positionTooltip(target) {
+          const margin = 8;
+          const gap = 10;
+          const targetRect = target.getBoundingClientRect();
+          const tooltipRect = pageTooltip.getBoundingClientRect();
+          let top = targetRect.top - tooltipRect.height - gap;
+          let verticalPlacement = "above";
+          if (top < margin) {
+            top = targetRect.bottom + gap;
+            verticalPlacement = "below";
+          }
+          if (top + tooltipRect.height > window.innerHeight - margin) {
+            top = Math.max(margin, window.innerHeight - tooltipRect.height - margin);
+          }
+          let left = targetRect.left + (targetRect.width - tooltipRect.width) / 2;
+          let horizontalPlacement = "center";
+          if (left + tooltipRect.width > window.innerWidth - margin) {
+            left = targetRect.left - tooltipRect.width - gap;
+            horizontalPlacement = "left";
+          }
+          if (left < margin) {
+            left = targetRect.right + gap;
+            horizontalPlacement = "right";
+          }
+          left = Math.max(margin, Math.min(left, window.innerWidth - tooltipRect.width - margin));
+          pageTooltip.style.top = String(top) + "px";
+          pageTooltip.style.left = String(left) + "px";
+          pageTooltip.dataset.placement = verticalPlacement + "-" + horizontalPlacement;
+        }
+
+        function showTooltip(target) {
+          const record = data.major_details[target.dataset.recordKey] || data.substage_hover[target.dataset.recordKey];
+          if (!record) { return; }
+          tooltipTarget = target;
+          tooltipTitle.textContent = record.semantic_id + " · " + record.display_title_zh;
+          tooltipStatus.textContent = "状态：" + record.status_label_zh;
+          tooltipDate.textContent = "日期：" + record.date_summary_zh;
+          const summary = record.work_summary_zh || "";
+          tooltipSummary.textContent = summary;
+          tooltipSummary.hidden = summary === "";
+          pageTooltip.hidden = false;
+          positionTooltip(target);
+        }
+
+        function hideTooltip() {
+          pageTooltip.hidden = true;
+          tooltipTarget = null;
+        }
+
+        function setOptionalDetail(block, target, value) {
+          const present = typeof value === "string" && value.trim() !== "";
+          target.textContent = present ? value : "";
+          block.hidden = !present;
+        }
+
+        function selectRecord(key, trigger) {
+          const record = data.major_details[key];
+          document.querySelectorAll(".record-detail-trigger").forEach(function (item) {
+            item.setAttribute("aria-expanded", String(Boolean(record) && item.dataset.recordKey === key));
+          });
+          lastDetailTrigger = trigger;
+          detailPanel.hidden = false;
+          if (!record) {
+            detailTitle.textContent = "母级版本详情";
+            selectedRecord.textContent = "未找到 " + key + " 的公开详情。";
+            detailError.hidden = false;
+            detailWorkBlock.hidden = true;
+            detailWorkSummary.textContent = "";
+            setOptionalDetail(detailEvidenceBlock, detailReleaseEvidence, "");
+            setOptionalDetail(detailBoundaryBlock, detailCapabilityBoundary, "");
+            setOptionalDetail(detailPlanningBlock, detailPlanningBasis, "");
+          } else {
+            detailTitle.textContent = record.semantic_id + " · " + record.display_title_zh;
+            selectedRecord.textContent = "状态：" + record.status_label_zh + " · 日期：" + record.date_summary_zh;
+            detailError.hidden = true;
+            detailWorkBlock.hidden = false;
+            detailWorkSummary.textContent = record.work_summary_zh;
+            setOptionalDetail(detailEvidenceBlock, detailReleaseEvidence, record.release_evidence_zh);
+            setOptionalDetail(detailBoundaryBlock, detailCapabilityBoundary, record.capability_boundary_zh);
+            setOptionalDetail(detailPlanningBlock, detailPlanningBasis, record.planning_basis_zh);
+          }
+          detailPanel.scrollIntoView({block: "nearest"});
+          detailClose.focus({preventScroll: true});
+        }
+
+        function closeDetails() {
+          const returnTarget = lastDetailTrigger;
+          detailPanel.hidden = true;
+          document.querySelectorAll(".record-detail-trigger").forEach(function (item) {
+            item.setAttribute("aria-expanded", "false");
+          });
+          if (returnTarget && returnTarget.isConnected) {
+            returnTarget.focus({preventScroll: true});
+          }
+        }
+
+        function toggleGroup(key) {
+          const list = document.getElementById("substage-list-" + key);
+          const owner = document.querySelector(".major-expand[data-expand-key=\"" + key + "\"]");
+          if (!list || !owner) { return; }
+          const next = list.hidden;
+          document.querySelectorAll(".gantt-substage-list").forEach(function (item) {
+            item.hidden = true;
+          });
+          document.querySelectorAll(".major-expand").forEach(function (item) {
+            item.setAttribute("aria-expanded", "false");
+            item.setAttribute("aria-label", "展开 " + item.dataset.expandKey + " 子阶段");
+          });
+          list.hidden = !next;
+          owner.setAttribute("aria-expanded", String(next));
+          owner.setAttribute("aria-label", (next ? "收起 " : "展开 ") + key + " 子阶段");
+        }
+
+        dayButton.addEventListener("click", function () { setView("daily"); });
+        weekButton.addEventListener("click", function () { setView("weekly"); });
+        ascButton.addEventListener("click", function () { setOrder("ascending"); });
+        descButton.addEventListener("click", function () { setOrder("descending"); });
+        detailClose.addEventListener("click", closeDetails);
+        document.querySelectorAll(".major-expand").forEach(function (trigger) {
+          trigger.addEventListener("click", function () { toggleGroup(trigger.dataset.expandKey); });
+        });
+        document.querySelectorAll(".record-detail-trigger").forEach(function (trigger) {
+          trigger.addEventListener("click", function (event) { event.stopPropagation(); selectRecord(trigger.dataset.recordKey, trigger); });
+          trigger.addEventListener("focus", function () { showTooltip(trigger); });
+          trigger.addEventListener("blur", hideTooltip);
+        });
+        document.querySelectorAll(".record-tooltip-trigger").forEach(function (trigger) {
+          trigger.addEventListener("mouseenter", function () { showTooltip(trigger); });
+          trigger.addEventListener("mouseleave", hideTooltip);
+        });
+        document.addEventListener("keydown", function (event) {
+          if (event.key === "Escape") {
+            if (!detailPanel.hidden) { closeDetails(); }
+            hideTooltip();
+          }
+        });
+        window.addEventListener("resize", function () {
+          if (tooltipTarget !== null) { positionTooltip(tooltipTarget); }
+        });
+        document.addEventListener("scroll", function () {
+          if (tooltipTarget !== null) { positionTooltip(tooltipTarget); }
+        }, true);
+      }());
+    </script>
+  </main>
+</body>
+</html>
