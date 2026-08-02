@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>SeaFlow Library · 历史开发</title>
+  <style>
+    :root { color-scheme: light dark; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; --ink: #17243b; --muted: #667085; --line: #d9deea; --paper: #f7f8fb; --panel: #ffffff; --focus: #1f77d0; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-inline-size: 0; background: var(--paper); color: var(--ink); }
+    .page-shell { max-inline-size: 76rem; margin-inline: auto; padding: clamp(1rem, 4vw, 3rem) clamp(1rem, 4vw, 2rem); }
+    .generation-nav { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-block-end: 1.2rem; }
+    .generation-nav a { border: 0.08rem solid var(--line); border-radius: 50rem; padding: 0.5rem 0.85rem; color: inherit; background: var(--panel); font-size: 0.85rem; font-weight: 760; text-decoration: none; }
+    .generation-nav a:hover { border-color: var(--generation-color); background: var(--generation-soft); }
+    .generation-nav a[aria-current="page"] { border-color: var(--generation-border); background: var(--generation-soft); }
+    .generation-nav a:focus-visible, a:focus-visible { outline: 0.2rem solid var(--focus); outline-offset: 0.18rem; }
+    .history-header { border-block-start: 0.2rem solid var(--generation-color); padding-block: 1rem 1.3rem; }
+    .history-header p { margin: 0.5rem 0 0; max-inline-size: 48rem; color: var(--muted); line-height: 1.65; }
+    h1 { margin: 0; font-size: clamp(1.8rem, 5vw, 3rem); letter-spacing: -0.03em; }
+    .generation-card { border: 0.08rem solid var(--line); border-radius: 24px; padding: clamp(1.25rem, 4vw, 2.5rem); background: var(--panel); overflow-wrap: anywhere; }
+    .generation-card-header { border-inline-start: 0.28rem solid var(--generation-color); padding-inline-start: 0.9rem; }
+    .generation-card h2 { margin: 0; font-size: clamp(1.35rem, 3vw, 2rem); }
+    .covered-range { margin: 0.45rem 0 0; color: var(--muted); font-size: 0.92rem; }
+    .generation-section { margin-block-start: 1.5rem; padding-block-start: 1.25rem; border-block-start: 0.08rem solid var(--line); }
+    .generation-section h3 { margin: 0; font-size: 1.05rem; }
+    .generation-section p { margin: 0.65rem 0 0; max-inline-size: 66rem; line-height: 1.78; }
+    .technical-history { display: inline-flex; margin-block-start: 1.55rem; color: var(--muted); font-size: 0.88rem; text-decoration: none; }
+    .technical-history:not([aria-disabled="true"]):hover { color: var(--generation-color); text-decoration: underline; }
+    @media (prefers-color-scheme: dark) { :root { --ink: #e7edf7; --muted: #afbacb; --line: #394454; --paper: #111826; --panel: #192332; } }
+    @media (max-width: 36rem) { .page-shell { padding-inline: 1rem; } .generation-card { padding: 1.2rem; } }
+  </style>
+</head>
+<body>
+  <main class="page-shell" data-generation-history-ui data-generator-version="1.6.0" style="--generation-color:rgb(0, 10, 0);--generation-soft:rgba(0, 10, 0, 0.06);--generation-border:rgba(0, 10, 0, 0.72)">
+    <nav class="generation-nav" aria-label="开发代际导航">
+      <a href="index.html" data-current-development-link>当前开发</a>
+      <a href="history.html" aria-current="page">历史开发</a>
+    </nav>
+    <header class="history-header">
+      <h1>SeaFlow Library · 历史开发</h1>
+      <p>已结束的产品代际按最终能力归档；本页不复述小版本开发流水或审计材料。</p>
+    </header>
+    <article class="generation-card" data-generation-id="V0"><header class="generation-card-header"><h2>V0｜基础建设代际</h2><p class="covered-range">覆盖版本：V0.1–V0.9</p></header><section class="generation-section"><h3>完成后能做什么</h3><p>V0 完成了 SeaFlow Library 的基础法源工程和受控治理骨架。系统已经能够接收、锁定并验证法律文本，生成稳定的条款与引用单元，对中国海商法、Hague–Visby Rules、UNCLOS 等馆藏执行确定性检索，并验证法源登记、文件哈希和引用结果的一致性。该代际还建立了项目控制机制、Owner 决策边界、Shan_Hai 图书馆管理员身份，以及能够生成候选法源包的通用摄取 Skill。</p></section>
+<section class="generation-section"><h3>能力边界是什么</h3><p>V0 最终形成的是可靠的法源基础设施和受控候选流程，而不是开放的生产写入系统。Agent 请求、法源提案和 Shan_Hai 的身份状态均不构成 canonical 写入授权；候选摄取不等于正式法源提升，生产执行和正式馆藏写入仍须由 Owner 单独批准。该代际尚未完成统一的 SeaFlow 产品接口、跨机器安装、主楼联通和完整的双平台移交。</p></section>
+<section class="generation-section"><h3>后续由 V1 承接什么</h3><p>V1 在 V0 基础上把图书馆转化为可安装、可移交并可由 SeaFlow 调用的完整产品。V1.0 建立 portable bundle、Citation Packet、source routing、JSONL bridge 和 Windows/Linux 双平台资格验证；V1.1 根据主楼测试修复和优化真实使用结果，并重构当前开发页面、历史入口、README 与产品合同。后续版本将完善 Human 与 Agent 两条受控法源入馆通路，并推进正式发布和生产治理。</p></section><span class="technical-history" aria-disabled="true">查看技术历史（待公开）</span></article>
+    <script type="application/json" id="generation-history-data">{"generations":[{"capabilities_after_completion":"V0 完成了 SeaFlow Library 的基础法源工程和受控治理骨架。系统已经能够接收、锁定并验证法律文本，生成稳定的条款与引用单元，对中国海商法、Hague–Visby Rules、UNCLOS 等馆藏执行确定性检索，并验证法源登记、文件哈希和引用结果的一致性。该代际还建立了项目控制机制、Owner 决策边界、Shan_Hai 图书馆管理员身份，以及能够生成候选法源包的通用摄取 Skill。","covered_version_range":"V0.1–V0.9","display_name":"基础建设代际","final_boundaries":"V0 最终形成的是可靠的法源基础设施和受控候选流程，而不是开放的生产写入系统。Agent 请求、法源提案和 Shan_Hai 的身份状态均不构成 canonical 写入授权；候选摄取不等于正式法源提升，生产执行和正式馆藏写入仍须由 Owner 单独批准。该代际尚未完成统一的 SeaFlow 产品接口、跨机器安装、主楼联通和完整的双平台移交。","generation_color":"rgb(0, 10, 0)","generation_color_border":"rgba(0, 10, 0, 0.72)","generation_color_soft":"rgba(0, 10, 0, 0.06)","generation_id":"V0","generation_index":0,"successor_direction":"V1 在 V0 基础上把图书馆转化为可安装、可移交并可由 SeaFlow 调用的完整产品。V1.0 建立 portable bundle、Citation Packet、source routing、JSONL bridge 和 Windows/Linux 双平台资格验证；V1.1 根据主楼测试修复和优化真实使用结果，并重构当前开发页面、历史入口、README 与产品合同。后续版本将完善 Human 与 Agent 两条受控法源入馆通路，并推进正式发布和生产治理。","technical_history_link":null}]}</script>
+    <script>
+      (function () {
+        const currentLink = document.querySelector('[data-current-development-link]');
+        const path = decodeURIComponent(window.location.pathname).replace(/\\/g, '/');
+        if (currentLink && /\/docs\/project_control\/ui\/history\.html$/i.test(path)) {
+          currentLink.href = 'index.html';
+        }
+      }());
+    </script>
+  </main>
+</body>
+</html>
