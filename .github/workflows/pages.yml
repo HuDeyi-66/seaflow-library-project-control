@@ -19,21 +19,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Prepare the allowlisted bilingual four-page deployment directory
+      - name: Prepare the allowlisted locale-consistent six-page deployment directory
         run: |
           mkdir _site
           cp index.html _site/index.html
           cp history.html _site/history.html
           cp project-control.html _site/project-control.html
           cp en.html _site/en.html
+          cp project-control.en.html _site/project-control.en.html
+          cp history.en.html _site/history.en.html
           cp fonts.css _site/fonts.css
           touch _site/.nojekyll
           cmp --silent index.html _site/index.html
           cmp --silent history.html _site/history.html
           cmp --silent project-control.html _site/project-control.html
           cmp --silent en.html _site/en.html
+          cmp --silent project-control.en.html _site/project-control.en.html
+          cmp --silent history.en.html _site/history.en.html
           cmp --silent fonts.css _site/fonts.css
-          test "$(find _site -maxdepth 1 -type f | wc -l)" -eq 6
+          test "$(find _site -maxdepth 1 -type f | wc -l)" -eq 8
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload GitHub Pages artifact
