@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src 'none'; script-src 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'">
   <title>SeaFlow Library · 当前开发</title>
   <style>
     :root {
@@ -214,8 +214,9 @@
       [data-view="weekly"] .gantt-header, [data-view="weekly"] .gantt-row { grid-template-columns: 17rem minmax(26rem, 1fr); }
     }
   </style>
+<link rel="stylesheet" href="fonts.css">
 </head>
-<body><nav aria-label="SeaFlow project navigation" style="padding:1rem;background:#102b42;color:#fff"><a style="color:#fff" href="index.html">SeaFlow overview</a> · <a style="color:#fff" href="history.html">History</a><p>Preserved project-control snapshot. Current qualification and Pre-3.6 consolidation are shown on the overview; historical lifecycle states below are unchanged.</p></nav>
+<body><nav aria-label="SeaFlow 项目导航" style="padding:1rem;background:#102b42;color:#fff"><a style="color:#fff" href="index.html">SeaFlow 项目首页</a> · <a style="color:#fff" href="history.html">历史沿革</a> · <a style="color:#fff" href="en.html" lang="en" hreflang="en">English</a><p>本页保留既有项目控制快照。当前资格状态与 Pre-3.6 整理进展见项目首页；下方历史生命周期状态保持原样。</p></nav>
   <div class="page-tooltip" id="record-tooltip" role="tooltip" hidden>
     <strong id="tooltip-title"></strong>
     <span class="tooltip-status" id="tooltip-status"></span>
